@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Eric Born
-stock logistic regression
-Create a KNN model based upon the mean and standard
-deviation measures of the weekly stock returns
+
 """
 
 import os
@@ -11,12 +9,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import confusion_matrix, recall_score
 from sklearn.model_selection import train_test_split
 
+# Using the stock ticker BSX - Boston Scientific Corporation.
 # setup input directory and filename
 ticker = 'BSX-labeled'
 input_dir = r'C:\Users\TomBrody\Desktop\Projects\stock-prediction\data'
@@ -77,20 +76,35 @@ del df_2018_reduced.index.name
 # Define features labels
 features = ['mu', 'sig']
 
-# create x dataset from 2017 features values
-X = df_2017_reduced[features].values
+#####
+# Setup train/test and scale data
+#####
 
-# create y datasets from 2017 label values
-Y = df_2017_reduced['label'].values
-
-# Setup scalers X dataset
+# Initialize scaler
 scaler = StandardScaler()
-scaler.fit(X)
-X = scaler.transform(X)
 
-# divide X and Y into test/train 50/50
-X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size = 0.5, 
-                                                    random_state = 3)
+# Create x training and test sets from 2017/2018 features values.
+x_train = df_2017_reduced[features].values
+x_test = df_2018_reduced[features].values
+
+# create y training and test sets from 2017/2018 label values
+y_train = df_2017_reduced['label'].values
+y_test = df_2018_reduced['label'].values
+
+# Scaler for training data
+scaler.fit(x_train)
+x_2017_train = scaler.transform(x_train)
+
+# Scaler for test data
+scaler.fit(x_test)
+x_2018_test = scaler.transform(x_test)
+
+#####
+# KNN
+#####
+
+# Create a KNN model based upon the mean and standard
+# deviation measures of the weekly stock returns
 
 # Create empty lists to store the models error rate and 
 # accuracy across various K's
@@ -98,25 +112,23 @@ error_rate = []
 accuracy = []
 k_value = []
 
-########
-
-# For loop to test the model using 2017 data
-# with k neighbors set to 3, 5, 7, 9 and 11
+# For loop to train the model with 2017 data and test on 2018 data
+# with k neighbors set to 3 to 10
 try:
-    for k in range (3, 13, 2):
+    for k in range (3, 11, 1):
         # Create the classifier with neighbors set to k from the loop
         knn_classifier = KNeighborsClassifier(n_neighbors = k)
        
         # Train the classifier
-        knn_classifier.fit(X_train, Y_train)
+        knn_classifier.fit(x_train, y_train)
         
         # Perform predictions
-        pred_k = knn_classifier.predict(X_test)
+        pred_k = knn_classifier.predict(x_test)
         
         # Store error rate and accuracy for particular K value
         k_value.append(k)
-        error_rate.append(round(np.mean(pred_k != Y_test) * 100, 2))
-        accuracy.append(round(sum(pred_k == Y_test) / len(pred_k) * 100, 2))
+        error_rate.append(round(np.mean(pred_k != y_test) * 100, 2))
+        accuracy.append(round(sum(pred_k == y_test) / len(pred_k) * 100, 2))
 except Exception as e:
     print(e)
     print('failed to build the KNN classifier.')
@@ -127,13 +139,13 @@ for i in range (0,5):
 # create a plot to display the accuracy of the model across K
 fig = plt.figure(figsize=(10, 4))
 ax = plt.gca()
-plt.plot(range(3, 13, 2), accuracy, color ='blue',
+plt.plot(range(3, 11, 1), accuracy, color ='blue',
          marker = 'o', markerfacecolor = 'black', markersize = 10)
 plt.title('Accuracy vs. k for stock labels')
 plt.xlabel('Number of neighbors: k')
 plt.ylabel('Accuracy')
 
-# setup and test on 2018 data with k = 5
+# setup and test on 2018 data with k = 7
 # Create x test set for 2018
 x_test = df_2018_reduced[features].values
 y_2018_test = df_2018_reduced['label'].values
@@ -143,10 +155,10 @@ scaler.fit(x_test)
 x_2018_test = scaler.transform(x_test)
 
 # Create the classifier with neighbors set to 5
-knn_2018 = KNeighborsClassifier(n_neighbors = 5)
+knn_2018 = KNeighborsClassifier(n_neighbors = 7)
 
 # Train the classifier using all of 2017 data
-knn_2018.fit(X, Y)
+knn_2018.fit(x_train, y_train)
         
 # Perform predictions on 2018 data
 pred_2018 = knn_2018.predict(x_2018_test)
