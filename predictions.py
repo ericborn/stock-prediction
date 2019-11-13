@@ -478,9 +478,12 @@ trade_data_2017_df = pd.DataFrame()
 try:
     for position_column in range(0, len(position_2017_df.iloc[0, :])):
         # used to increment the column name to represend the window size
-        lin_2017_price_name  = 'long_price'  + str(lin_reg_2017_name_increment)
-        lin_2017_shares_name = 'long_shares' + str(lin_reg_2017_name_increment)
-        lin_2017_worth_name  = 'long_worth'  + str(lin_reg_2017_name_increment)
+        lin_2017_price_name  = 'lin_2017_price'  + \
+                                str(lin_reg_2017_name_increment)
+        lin_2017_shares_name = 'lin_2017_shares' + \
+                                str(lin_reg_2017_name_increment)
+        lin_2017_worth_name  = 'lin_2017_window '  + \
+                                str(lin_reg_2017_name_increment)
 
         for position_row in range(0, len(position_2017_df)):
             # Buy section
@@ -583,9 +586,10 @@ plt.ylabel('Total Number of Trades')
 plt.show()
 
 
-###### Part 2
-# Using a fixed window size of 5 which was determined in part 1 above
-# to analyze and predict stock prices in data from 2018.
+# Above it was determined that using a fixed window size of 5 is the most
+# profitable, since there are more overall trades and the average per trade
+# is only 0.35 or less per trade. This window size will be used to analyze and 
+# predict stock prices in the 2018 data.
 # Unfortunately the two measures being used, closing and adjusted 
 # closing price are exactly the same every day in 2018
 # so the results are a bit uninteresting
