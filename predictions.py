@@ -261,36 +261,25 @@ else:
 log_reg_classifier = LogisticRegression(solver = 'liblinear')
 
 # Train the classifier on 2017 data
-log_reg_classifier.fit(x_2017_train, y_train)
+log_reg_classifier.fit(x_train_scaled, y_train)
 
 # Predict using 2018 feature data
-prediction = log_reg_classifier.predict(x_2018_test)
+log_reg_prediction = log_reg_classifier.predict(x_test_scaled)
 
-# print coefficient and intercept
-# print(log_reg_classifier.coef_)
-# print(log_reg_classifier.intercept_)
-
+# Print the mu and sig
 print('output the coefficients with feature names')
 coef = log_reg_classifier.coef_
 for p,c in zip(features,list(coef[0])):
     print(p + '\t' + str(c))
 
-# 1)
-# what is the equation for logistic regression that your 
-# classifier found from year 1 data?
-print('\nThe equation for logistic regression found in year 1 data is:')
-print('y = 0.1621 + 2.0277*mu - 0.0168*sig')
-
-# 2)
-# what is the accuracy for year 2?
-# 79.245% accuracy
-accuracy = np.mean(prediction == y_test)
+# 79.25% accuracy for year 2
+accuracy = np.mean(log_reg_prediction == y_test)
 print('\nThe accuracy for year 2 is:')
 print(round(accuracy * 100, 2), '%')
 
-# 3)
 # Output the confusion matrix
-cm = confusion_matrix(y_test, prediction)
+cm = confusion_matrix(y_test, log_reg_prediction)
+tn, fp, fn, tp  = confusion_matrix(y_test, log_reg_prediction).ravel()
 print('\nConfusion matrix for year 2 predictions:')
 print(cm, '\n')
 
@@ -310,44 +299,41 @@ plt.title('Confusion matrix', y=1.1)
 plt.ylabel('Actual label')
 plt.xlabel('Predicted label')
 
-# 4)
-# what is true positive rate (sensitivity or recall) and true
-# negative rate (specificity) for year 2?
-print('The recall is: 22/24 =', 
-      round(recall_score(y_test, prediction) * 100, 2),'%')
-print('The specificity is: 20/29 = 68.97%')	
+# true positive rate (sensitivity or recall) and true negative rate 
+# (specificity) for year 2
+print('The TPR is:', str(tp) + '/' + str(tp + fn) + ',',
+      round(recall_score(y_test, log_reg_prediction) * 100, 2),'%')
+print('The TNR is:', str(tn) + '/' + str(tn + fp) + ',',
+    round(tn / (tn + fp) * 100, 2),'%')
 
-# 5)
-# Implemented trading strategy based upon label predicitons vs
-# buy and hold strategy
-
+# Log reg trading strategy based upon label predicitons
 # Initialize wallet and shares to track current money and number of shares.
-wallet = 100.00
-shares = 0
-worth = 0
+log_reg_wallet = 100.00
+log_reg_shares = 0
+log_reg_worth = 0
 
 # stores adj_close values for the last day of each trading week
-adj_close = df_2018.groupby('td_week_number')['adj_close'].last()
-
-# stores open price for the first day of each trading week
-open_price = df_2018.groupby('td_week_number')['open'].first()
+#adj_close = bsx_df_2018.groupby('td_week_number')['adj_close'].last()
+#
+## stores open price for the first day of each trading week
+#open_price = bsx_df_2018.groupby('td_week_number')['open'].first()
 
 # for loop that evaluates the dataset deciding when to buy/sell based
 # upon the prediction labels. 0 is a bad week, 1 is a good week
 try:
-    for i in range(0, len(prediction)):
+    for i in range(0, len(log_reg_prediction)):
         # Sell should occur on the last day of a green week at 
         # the adjusted_close price. Since i is tracking the current
         # trading week we need to minus 1 to get the adjusted close price
         # from the previous trading week
-        if prediction[i] == 0 and shares > 0:
-            wallet = round(shares * adj_close[i - 1], 2)
-            shares = 0
+        if log_reg_prediction[i] == 0 and log_reg_shares > 0:
+            log_reg_wallet = round(log_reg_shares * adj_close[i - 1], 2)
+            log_reg_shares = 0
             
         # Buy should occur on the first day of a green week at the open price
-        if prediction[i] == 1 and shares == 0: 
-            shares = wallet / open_price[i]
-            wallet = 0            
+        if log_reg_prediction[i] == 1 and log_reg_shares == 0: 
+            log_reg_shares = log_reg_wallet / open_price[i]
+            log_reg_wallet = 0            
             
 except Exception as e:
     print(e)
@@ -355,22 +341,13 @@ except Exception as e:
 
 
 # set worth by multiplying stock price on final day by total shares
-worth = round(shares * adj_close[52], 2)
+log_reg_worth = round(log_reg_shares * adj_close[52], 2)
 
-if worth == 0:
-    worth = wallet
-    profit = round(wallet - 100.00, 2)
+if log_reg_worth == 0:
+    log_reg_worth = log_reg_wallet
+    log_reg_profit = round(log_reg_wallet - 100.00, 2)
 else:
-    profit = round(worth - 100.00, 2)
-
-# Total Cash: $0
-# Total shares: 6.703067 
-# Worth: $236.89
-# This method would close the year at $ 141.7 a profit of $ 41.7
-print('\n2018 Label Strategy:')
-print('Total Cash: $', wallet, '\nTotal shares:', round(shares, 6),
-      '\nWorth: $', worth)    
-print('This method would close the year at $', worth, 'a profit of $', profit)
+    log_reg_profit = round(log_reg_worth - 100.00, 2)
 
 ######
 # Linear Regression
@@ -585,7 +562,6 @@ plt.xlabel('Window Size')
 plt.ylabel('Total Number of Trades')
 plt.show()
 
-# TODO!!
 # Above it was determined that using a fixed window size of 5 is the most
 # profitable, since there are more overall trades and the average per trade
 # is only 0.35 or less per trade. This window size will be used to analyze and 
@@ -655,11 +631,6 @@ lin_reg_2018_price = 0
 lin_reg_2018_name_increment = 5
 trade_data_2018_df = pd.DataFrame()
 
-# Manual variable setters for testing
-#position_2018_df.iloc[:, 0]
-#position_column = 0
-#position_row = 4
-
 # for loop that evaluates the dataset deciding when to buy/sell based
 # upon the prediction labels. 0 is a bad week, 1 is a good week
 try:
@@ -717,7 +688,9 @@ except Exception as e:
     sys.exit('Failed to build trading data for trade_data_df')            
 
 # Finish data building
+    
 #########
+    
 # Start analysis/presenation
     
 # create a dataframe to store the daily profits made from selling stocks
@@ -928,6 +901,13 @@ print('Total Cash: $', knn_wallet, '\nTotal shares:', round(knn_shares, 6),
       '\nWorth: $', knn_worth)    
 print('This method would close the year at $', knn_worth, 'a profit of $', 
       knn_profit)
+
+# Logistic regression
+print('\nLogistic Regression Label Strategy:')
+print('Total Cash: $', log_reg_wallet, '\nTotal shares:',
+      round(log_reg_shares, 6), '\nWorth: $', log_reg_worth)    
+print('This method would close the year at $', log_reg_worth, 'a profit of $',
+      log_reg_profit)
 
 # Decision Tree profits
 print('\nDecisions tree Label Strategy:')
