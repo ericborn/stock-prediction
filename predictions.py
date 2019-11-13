@@ -143,17 +143,18 @@ try:
     for k in range (3, 11, 1):
         # Create the classifier with neighbors set to k from the loop
         knn_classifier = KNeighborsClassifier(n_neighbors = k)
-       
+
         # Train the classifier
         knn_classifier.fit(x_train_scaled, y_train)
-        
+
         # Perform predictions
         pred_k = knn_classifier.predict(x_test_scaled)
-        
+
         # Store error rate and accuracy for particular K value
         k_value.append(k)
         error_rate.append(round(np.mean(pred_k != y_test) * 100, 2))
         accuracy.append(round(sum(pred_k == y_test) / len(pred_k) * 100, 2))
+
 except Exception as e:
     print(e)
     sys.exit('failed to build the KNN classifier.')
@@ -171,10 +172,10 @@ plt.xlabel('Number of neighbors: k')
 plt.ylabel('Accuracy')
 
 # Create the classifier with neighbors set to 7
-knn_2018 = KNeighborsClassifier(n_neighbors = 7)
+knn_2018 = KNeighborsClassifier(n_neighbors = 4)
 
 # Train the classifier using all of 2017 data
-knn_2018.fit(x_train, y_train)
+knn_2018.fit(x_train_scaled, y_train)
         
 # Perform predictions on 2018 data
 knn_pred_2018 = knn_2018.predict(x_test_scaled)
@@ -185,12 +186,12 @@ knn_accuracy_2018 = round(sum(knn_pred_2018 == y_test) /
                           len(knn_pred_2018) * 100, 2)
 
 # print accuracy
-print('\nThe accuracy on 2018 data when K = 7 is:', knn_accuracy_2018, '%')
+print('\nThe accuracy on 2018 data when K = 4 is:', knn_accuracy_2018, '%')
 
 # Output the confusion matrix
 cm = confusion_matrix(y_test, knn_pred_2018)
 tn, fp, fn, tp  = confusion_matrix(y_test, knn_pred_2018).ravel()
-print('\nConfusion matrix for year 2 predictions:')
+print('\nConfusion matrix for KNN:')
 print(cm, '\n')
 
 # Create confusion matrix heatmap
@@ -205,7 +206,7 @@ plt.yticks(tick_marks, class_names)
 sns.heatmap(pd.DataFrame(cm), annot=True, cmap="BrBG", fmt='g')
 ax.xaxis.set_label_position("top")
 plt.tight_layout()
-plt.title('Confusion matrix', y=1.1)
+plt.title('KNN Confusion Matrix', y=1.1)
 plt.ylabel('Actual label')
 plt.xlabel('Predicted label')
 
@@ -280,7 +281,7 @@ print(round(accuracy * 100, 2), '%')
 # Output the confusion matrix
 cm = confusion_matrix(y_test, log_reg_prediction)
 tn, fp, fn, tp  = confusion_matrix(y_test, log_reg_prediction).ravel()
-print('\nConfusion matrix for year 2 predictions:')
+print('\nConfusion matrix for Logistic Regression:')
 print(cm, '\n')
 
 # Create confusion matrix heatmap
@@ -295,7 +296,7 @@ plt.yticks(tick_marks, class_names)
 sns.heatmap(pd.DataFrame(cm), annot=True, cmap="BrBG" ,fmt='g')
 ax.xaxis.set_label_position("top")
 plt.tight_layout()
-plt.title('Confusion matrix', y=1.1)
+plt.title('Log Reg Confusion matrix', y=1.1)
 plt.ylabel('Actual label')
 plt.xlabel('Predicted label')
 
@@ -806,7 +807,7 @@ print('The decision tree classifier has an accuracy of',
 
 # Output the confusion matrix
 cm = confusion_matrix(y_test, tree_prediction)
-print('\nConfusion matrix for year 2 predictions:')
+print('\nDecision Tree Confusion matrix:')
 print(cm, '\n')
 
 # Create confusion matrix heatmap
@@ -821,7 +822,7 @@ plt.yticks(tick_marks, class_names)
 sns.heatmap(pd.DataFrame(cm), annot=True, cmap="summer" ,fmt='g')
 ax.xaxis.set_label_position("top")
 plt.tight_layout()
-plt.title('Confusion matrix', y=1.1)
+plt.title('Decision Tree Confusion Matrix', y=1.1)
 plt.ylabel('Actual label')
 plt.xlabel('Predicted label')
 
@@ -863,7 +864,7 @@ except Exception as e:
     exit('Failed to evaluate decision tree labels')
 
 # set worth by multiplying stock price on final day by total shares
-tree_worth = round(tree_shares * adj_close[52], 2)
+tree_worth = round(tree_shares * adj_close[-1][0], 2)
 
 if tree_worth == 0:
     tree_worth = tree_wallet
@@ -888,7 +889,7 @@ bh_worth = 0
 
 # Calculate shares, worth and profit
 shares = round(bh_wallet / float(open_price[0]), 6)
-bh_worth = round(shares * adj_close[52], 2)
+bh_worth = round(shares * adj_close[-1][0], 2)
 bh_profit = round(bh_worth - 100.00, 2)
 
 #####
