@@ -554,6 +554,9 @@ plt.show()
 mean_2017 = summary_2017_df.mean()
 print(mean_2017)
 
+# best mean
+mean_2017_best = round(mean_2017[-1],2)
+
 # creates a barplot of the window size vs the average return in dollars
 sns.lineplot(window_size, summary_2017_df.mean(), color = 'navy')
 plt.tight_layout()
@@ -764,8 +767,8 @@ plt.show()
 profit_2018 = round(summary_2018_df.sum(), 2)
 print(profit_2018)
 
-# 2017 vs 2018 profits, 0 index to represent highest profit 2017
-print('profits 2017: ', profit_2017_best,'\nprofits 2018: ', profit_2018)
+# 2017 vs 2018 profits
+print('Profits 2017:', profit_2017_best,'\nProfits 2018:', profit_2018)
 
 # Plot total profits 2017 vs 2018
 profit_data = pd.DataFrame({'Year': ['2017', '2018'], 
@@ -780,6 +783,9 @@ plt.show()
 mean_2018 = round(summary_2018_df.mean(), 2)
 print(mean_2018)
 
+# 2017 vs 2018 means
+print('Mean 2017:', mean_2017_best,'\nMean 2018:', mean_2018)
+
 # Plot mean trade amount 2017 vs 2018
 mean_data = pd.DataFrame({'Year': ['2017', '2018'], 
                             'Average': [float(mean_2017[0]), float(mean_2018)]})
@@ -793,13 +799,16 @@ plt.show()
 trades_2018 = summary_2018_df.count()
 print(trades_2018)
 
+# 2017 vs 2018 total trades
+print('2017 max trades:', trades_2017[0],'\n2018 trades:', trades_2018)
+
 # Plot total number of trades 2017 vs 2018
 trade_data = pd.DataFrame({'Year': ['2017', '2018'], 
                             'Trades': [int(trades_2017[0]), int(trades_2018)]})
 sns.barplot(x = 'Year', y = 'Trades', data = trade_data) 
-plt.title('Total Trades 2017 vs. 2018')
+plt.title('Max Trades 2017 vs. 2018')
 plt.xlabel('Year')
-plt.ylabel('Total Number of Trades')
+plt.ylabel('Max Number of Trades')
 plt.show()
 
 #####
