@@ -851,7 +851,7 @@ try:
         # trading week we need to minus 1 to get the adjusted close price
         # from the previous trading week
         if tree_prediction[day] == 0 and tree_shares > 0:
-            tree_wallet = round(tree_shares * adj_close[day - 1], 2)
+            tree_wallet = round(tree_shares * adj_close[-1][0], 2)
             tree_shares = 0
             
         # Buy should occur on the first day of a green week at the open price
