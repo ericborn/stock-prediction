@@ -362,6 +362,9 @@ print('This method would close the year at $', worth, 'a profit of $', profit)
 # Linear Regression
 ######
 
+# TODO!!
+
+
 # This section of code calculates the regression for each day incrementing
 # through a window size from 5 to 30 days.
 # If the predicted close price for w+1 is greater than the close price for w,
@@ -404,12 +407,15 @@ position_2017_df  = pd.DataFrame()
 # to contains the window sizes
 window_size = []
 
+# For loop iterates through bsx_df_2017 with a window size of 5 to 30, 
+# incrementing by 1. The window size is used as the number of days in the batch
+# being evaluated at a time.
 try:
     for window in range(5,31):
         # Create position column to indicate whether its a buy or sell day.
         # column is reset to all 0's at the start of each loop iteration
-        df_2017['position'] = 0
-        df_2017['prediction'] = 0
+        bsx_df_2017['position'] = 0
+        bsx_df_2017['prediction'] = 0
         
         # window size list populated with size increments
         window_size.append(window)
@@ -420,40 +426,40 @@ try:
         
         # loop that handles gathering the adj_close and close price 
         # for the appropriate window size
-        for rows in range(0, len(df_2017)):
-            adj_close = np.array(df_2017.loc[window_start:window_end,
+        for rows in range(0, len(bsx_df_2017)):
+            adj_close = np.array(bsx_df_2017.loc[window_start:window_end,
                                      'adj_close']).reshape(-1, 1)
-            close = np.array(df_2017.loc[window_start:window_end,
+            close = np.array(bsx_df_2017.loc[window_start:window_end,
                                      'close']).reshape(-1, 1)
             lm.fit(adj_close, close)
             
             # Breaks on the last row since it cannot predict w + 1 if 
             # there is no data for the next day, else it creates
             # a prediction.
-            if window_end == len(df_2017) - 1:
+            if window_end == len(bsx_df_2017) - 1:
                 break
             else:
-                pred = lm.predict(np.array(df_2017.loc[window_end + 1, 
+                pred = lm.predict(np.array(bsx_df_2017.loc[window_end + 1, 
                                           'adj_close']).reshape(-1, 1))
             
-            # store the predicted value in the 2018 dataframe
-            df_2017.loc[window_end + 1, 'prediction'] = float(pred) 
+            # store the predicted value in the 2017 dataframe
+            bsx_df_2017.loc[window_end + 1, 'prediction'] = float(pred) 
     
-            # updates the position column with a 1 when prediciton for tomorrows
-            # close price (w + 1) is greater than the close price of w.
-            # Else it marks it with a -1 to indicate a lower price.
-            if float(pred) > df_2017.loc[window_end, 'close']:
-                df_2017.loc[window_end, 'position'] = 1
-            elif float(pred) == df_2017.loc[window_end, 'close']:
-                df_2017.loc[window_end, 'position'] = 0
+            # updates the position column with a 1 when prediciton for 
+            # tomorrows close price (w + 1) is greater than the close price of 
+            # w. Else it marks it with a -1 to indicate a lower price.
+            if float(pred) > bsx_df_2017.loc[window_end, 'close']:
+                bsx_df_2017.loc[window_end, 'position'] = 1
+            elif float(pred) == bsx_df_2017.loc[window_end, 'close']:
+                bsx_df_2017.loc[window_end, 'position'] = 0
             else:
-                df_2017.loc[window_end, 'position'] = -1
+                bsx_df_2017.loc[window_end, 'position'] = -1
             window_start += 1
             window_end += 1
         
         # writes the position column to a the position dataframe after each
         # window iteration
-        position_2017_df[str(window)] = df_2017.loc[:, 'position']
+        position_2017_df[str(window)] = bsx_df_2017.loc[:, 'position']
 
 except Exception as e:
     print(e)
@@ -461,35 +467,33 @@ except Exception as e:
     
 # Initialize variables and trade_data_df to their starting values
 # before they are utilized in the loop to build out the trade_data df
-long_shares = 0
-long_worth = 0
-long_price = 0
-name_increment = 5
+lin_reg_2017_shares = 0
+lin_reg_2017_worth = 0
+lin_reg_2017_price = 0
+lin_reg_2017_name_increment = 5
 trade_data_2017_df = pd.DataFrame()
-
-# Manual variable setters for testing
-#position_df.iloc[:, 0]
-#position_column = 0
-#position_row = 4
 
 # for loop that evaluates the dataset deciding when to buy/sell based
 # upon the prediction labels. 0 is a bad week, 1 is a good week
 try:
     for position_column in range(0, len(position_2017_df.iloc[0, :])):
         # used to increment the column name to represend the window size
-        long_price_name  = 'long_price'  + str(name_increment)
-        long_shares_name = 'long_shares' + str(name_increment)
-        long_worth_name  = 'long_worth'  + str(name_increment)
+        lin_2017_price_name  = 'long_price'  + str(lin_reg_2017_name_increment)
+        lin_2017_shares_name = 'long_shares' + str(lin_reg_2017_name_increment)
+        lin_2017_worth_name  = 'long_worth'  + str(lin_reg_2017_name_increment)
 
         for position_row in range(0, len(position_2017_df)):
             # Buy section
             # long_shares buy should occur if position dataframe  
             # contains a 1 and there are no long_shares held
             if (position_2017_df.iloc[position_row, position_column] == 1 
-            and long_shares == 0): 
-                long_shares = 100.00 / df_2017.loc[position_row, 'close']           
-                long_price = df_2017.loc[position_row, 'close']
-                trade_data_2017_df.at[position_row, long_price_name] = long_price
+            and lin_reg_2017_shares == 0): 
+                lin_reg_2017_shares = 100.00 / bsx_df_2017.loc[position_row,
+                                                               'close']           
+                lin_reg_2017_long_price = bsx_df_2017.loc[position_row,
+                                                          'close']
+                trade_data_2017_df.at[position_row, lin_2017_price_name] = \
+                lin_reg_2017_long_price
                 #trade_data_df.at[position_row, long_worth_name] = ((long_shares 
                 #              * df_2017.loc[position_row, 'close'])
                 #              - long_price * long_shares)
@@ -498,49 +502,33 @@ try:
             # long_shares sell should occur if position dataframe  
             # contains a -1 and there are long_shares held
             if (position_2017_df.iloc[position_row, position_column] == -1
-            and long_shares != 0): 
-                long_worth = ((long_shares 
-                              * df_2017.loc[position_row, 'close'])
-                              - long_price * long_shares)
-                trade_data_2017_df.at[position_row, long_worth_name] = (
+            and lin_reg_2017_shares != 0): 
+                long_worth = ((lin_reg_2017_shares 
+                              * bsx_df_2017.loc[position_row, 'close'])
+                              - lin_reg_2017_long_price * lin_reg_2017_shares)
+                trade_data_2017_df.at[position_row, lin_2017_worth_name] = (
                                                           round(long_worth, 2))
-                trade_data_2017_df.at[position_row, long_price_name] = (
-                                            df_2017.loc[position_row, 'close'])
-                long_shares = 0
-                long_price = 0
-                long_worth = 0
+                trade_data_2017_df.at[position_row, lin_2017_worth_name] = (
+                                            bsx_df_2017.loc[position_row, 
+                                                            'close'])
+                lin_reg_2017_shares = 0
+                lin_reg_2017_price = 0
+                lin_reg_2017_worth = 0
                   
             # On each loop iteration record the current long shares held
-            trade_data_2017_df.at[position_row, long_shares_name]  = long_shares
+            trade_data_2017_df.at[position_row, lin_2017_shares_name] = \
+            lin_reg_2017_shares
        
             # Manual increments for testing
             #position_column += 1
             #position_row += 1
 
         # increments the name_increment to represent the window size
-        name_increment += 1
+        lin_reg_2017_name_increment += 1
             
 except Exception as e:
     print(e)
     sys.exit('Failed to build trading data for trade_data_df')            
-
-# NaN are excluded when using the mean function so I decided to leave them in
-# Replace all NaN with 0's
-#trade_data_df = trade_data_df.fillna(0)            
-
-# export trade data to CSV
-#try:  
-#    trade_data_df.to_csv(r'C:\Users\TomBrody\Desktop\School\677\wk4\trade_data.csv', index = False)
-#
-#except Exception as e:
-#    print(e)
-#    sys.exit('failed to export trade_data_df to csv')     
-
-# sample data selections
-#trade_data_df.iloc[0:10, 0:3]
-#trade_data_df.iloc[0:10, 77]
-#trade_data_df.iloc[0:3, 2]
-#trade_data_df.iloc[:, column]
 
 # creates a list containing the column names from the trade_data_df
 name_list = []
@@ -604,8 +592,8 @@ plt.show()
 
 # Setup column in the 2018 dataframe to track the buy/sell position,
 # the predicted value and initial start and end window positions
-df_2018['position'] = 0
-df_2018['prediction'] = 0
+bsx_df_2018['position'] = 0
+bsx_df_2018['prediction'] = 0
 window_start = 0
 window_end = 4
 
@@ -614,10 +602,10 @@ position_2018_df  = pd.DataFrame()
 try:    
     # loop that handles gathering the adj_close and close price 
     # for the 2018 dataframe
-    for rows in range(0, len(df_2018)):
-        adj_close = np.array(df_2018.loc[window_start:window_end,
+    for rows in range(0, len(bsx_df_2018)):
+        adj_close = np.array(bsx_df_2018.loc[window_start:window_end,
                                  'adj_close']).reshape(-1, 1)
-        close = np.array(df_2018.loc[window_start:window_end,
+        close = np.array(bsx_df_2018.loc[window_start:window_end,
                                  'close']).reshape(-1, 1)
         # fits the model using adjusted close and close stock prices
         lm.fit(adj_close, close)
@@ -625,30 +613,30 @@ try:
         # Breaks on the last row since it cannot predict w + 1 if 
         # there is no data for the next day, else it creates
         # a prediction.
-        if window_end == len(df_2018) - 1:
+        if window_end == len(bsx_df_2018) - 1:
             break
         else:
-            pred = lm.predict(np.array(df_2018.loc[window_end + 1, 
+            pred = lm.predict(np.array(bsx_df_2018.loc[window_end + 1, 
                                       'close']).reshape(-1, 1))
         
         # store the predicted value in the 2018 dataframe
-        df_2018.loc[window_end + 1, 'prediction'] = float(pred) 
+        bsx_df_2018.loc[window_end + 1, 'prediction'] = float(pred) 
         
         # updates the position column with a 1 when prediciton for tomorrows
         # close price (w + 1) is greater than the close price of w.
         # Else it marks it with a -1 to indicate a lower price.
-        if float(pred) > df_2018.loc[window_end, 'close']:
-            df_2018.loc[window_end, 'position'] = 1
-        elif float(pred) == df_2018.loc[window_end, 'close']:
-            df_2018.loc[window_end, 'position'] = 0
+        if float(pred) > bsx_df_2018.loc[window_end, 'close']:
+            bsx_df_2018.loc[window_end, 'position'] = 1
+        elif float(pred) == bsx_df_2018.loc[window_end, 'close']:
+            bsx_df_2018.loc[window_end, 'position'] = 0
         else:
-            df_2018.loc[window_end, 'position'] = -1
+            bsx_df_2018.loc[window_end, 'position'] = -1
         window_start += 1
         window_end += 1
 
         # writes the position column to a the position dataframe after each
         # window iteration
-        position_2018_df[str(window)] = df_2018.loc[:, 'position']
+        position_2018_df[str(window)] = bsx_df_2018.loc[:, 'position']
 
 except Exception as e:
     print(e)
@@ -682,8 +670,8 @@ try:
             # contains a 1 and there are no long_shares held
             if (position_2018_df.iloc[position_row, position_column] == 1 
             and long_shares == 0): 
-                long_shares = 100.00 / df_2018.loc[position_row, 'close']           
-                long_price = df_2018.loc[position_row, 'close']
+                long_shares = 100.00 / bsx_df_2018.loc[position_row, 'close']           
+                long_price = bsx_df_2018.loc[position_row, 'close']
                 trade_data_2018_df.at[position_row, long_price_name] = long_price
                 #trade_data_df.at[position_row, long_worth_name] = ((long_shares 
                 #              * df_2017.loc[position_row, 'close'])
@@ -695,12 +683,12 @@ try:
             if (position_2018_df.iloc[position_row, position_column] == -1
             and long_shares != 0): 
                 long_worth = ((long_shares 
-                              * df_2018.loc[position_row, 'close'])
+                              * bsx_df_2018.loc[position_row, 'close'])
                               - long_price * long_shares)
                 trade_data_2018_df.at[position_row, long_worth_name] = (
                                                           round(long_worth, 2))
                 trade_data_2018_df.at[position_row, long_price_name] = (
-                                            df_2018.loc[position_row, 'close'])
+                                            bsx_df_2018.loc[position_row, 'close'])
                 long_shares = 0
                 long_price = 0
                 long_worth = 0
