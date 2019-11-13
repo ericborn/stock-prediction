@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from sklearn import tree
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler
@@ -34,7 +35,7 @@ sns.set_style('darkgrid')
 
 # read csv file into dataframe
 try:
-    df = pd.read_csv(ticker_file)
+    bsx_df = pd.read_csv(ticker_file)
     print('opened file for ticker: ', ticker,'\n')
 
 except Exception as e:
@@ -42,36 +43,36 @@ except Exception as e:
     sys.exit('failed to read stock data for ticker: ', ticker)
 
 # Create class column where red = 0 and green = 1
-df['class'] = df['label'].apply(lambda x: 1 if x =='green' else 0)
+bsx_df['class'] = bsx_df['label'].apply(lambda x: 1 if x =='green' else 0)
 
 # Create separate dataframes for 2017 and 2018 data
 # 2017 will be used as training, 2018 as testing for the model
-df_2017 = df.loc[df['td_year']==2017]
-df_2018 = df.loc[df['td_year']==2018]
+bsx_df_2017 = bsx_df.loc[bsx_df['td_year']==2017]
+bsx_df_2018 = bsx_df.loc[bsx_df['td_year']==2018]
 
 # Reset indexes
-df_2017 = df_2017.reset_index(level=0, drop=True)
-df_2018 = df_2018.reset_index(level=0, drop=True)
+bsx_df_2017 = bsx_df_2017.reset_index(level=0, drop=True)
+bsx_df_2018 = bsx_df_2018.reset_index(level=0, drop=True)
 
 # Create reduced dataframe only containing week number, mu, sig and label
-df_2017_reduced = pd.DataFrame( {'week nbr' : range(1, 53),
-                'mu'    : df_2017.groupby('td_week_number')['return'].mean(),
-                'sig'   : df_2017.groupby('td_week_number')['return'].std(),
-                'label' : df_2017.groupby('td_week_number')['class'].first()})
+bsx_2017_reduced = pd.DataFrame( {'week nbr' : range(1, 53),
+                'mu'    : bsx_df_2017.groupby('td_week_number')['return'].mean(),
+                'sig'   : bsx_df_2017.groupby('td_week_number')['return'].std(),
+                'label' : bsx_df_2017.groupby('td_week_number')['class'].first()})
 
 # Create reduced dataframe only containing week number, mu, sig and label
-df_2018_reduced = pd.DataFrame( {'week nbr' : range(0, 53),
-                'mu'    : df_2018.groupby('td_week_number')['return'].mean(),
-                'sig'   : df_2018.groupby('td_week_number')['return'].std(),
-                'label' : df_2018.groupby('td_week_number')['class'].first()})
+bsx_2018_reduced = pd.DataFrame( {'week nbr' : range(0, 53),
+                'mu'    : bsx_df_2018.groupby('td_week_number')['return'].mean(),
+                'sig'   : bsx_df_2018.groupby('td_week_number')['return'].std(),
+                'label' : bsx_df_2018.groupby('td_week_number')['class'].first()})
 
 # Replacing nan in week 52 sigma column with a zero due to 
 # there being only 1 trading day that week.
-df_2018_reduced = df_2018_reduced.fillna(0)
+bsx_2018_reduced = bsx_2018_reduced.fillna(0)
 
 # remove index name labels from dataframes
-del df_2017_reduced.index.name
-del df_2018_reduced.index.name
+del bsx_2017_reduced.index.name
+del bsx_2018_reduced.index.name
 
 # Define features labels
 features = ['mu', 'sig']
@@ -84,12 +85,12 @@ features = ['mu', 'sig']
 scaler = StandardScaler()
 
 # Create x training and test sets from 2017/2018 features values.
-x_train = df_2017_reduced[features].values
-x_test = df_2018_reduced[features].values
+x_train = bsx_2017_reduced[features].values
+x_test = bsx_2018_reduced[features].values
 
 # create y training and test sets from 2017/2018 label values
-y_train = df_2017_reduced['label'].values
-y_test = df_2018_reduced['label'].values
+y_train = bsx_2017_reduced['label'].values
+y_test = bsx_2018_reduced['label'].values
 
 # Scaler for training data
 scaler.fit(x_train)
