@@ -16,6 +16,20 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import confusion_matrix, recall_score
 #from sklearn.model_selection import train_test_split
 
+'''
+Takes x and y as inputs and calculates the size of the array,
+the sum of squares, slope and intercept. 
+Used in the Linear Regression section
+'''
+def estimate_coef (x, y):
+    n = np.size(x)
+    mu_x, mu_y = np.mean(x), np.mean(y)
+    SS_xy = np.sum(y * x) - n * mu_y * mu_x
+    SS_xx = np.sum(x * x) - n * mu_x * mu_x
+    slope = SS_xy / SS_xx
+    intercept = mu_y - slope * mu_x
+    return (slope, intercept)
+
 # Using the stock ticker BSX - Boston Scientific Corporation.
 # setup input directory and filename
 ticker = 'BSX-labeled'
@@ -362,9 +376,6 @@ print('This method would close the year at $', worth, 'a profit of $', profit)
 # Linear Regression
 ######
 
-# TODO!!
-
-
 # This section of code calculates the regression for each day incrementing
 # through a window size from 5 to 30 days.
 # If the predicted close price for w+1 is greater than the close price for w,
@@ -383,19 +394,6 @@ print('This method would close the year at $', worth, 'a profit of $', profit)
 # window_start = start of the window
 # adj_close = array of adj_close prices inside window (x axis)
 # close = array of close prices inside window (y axis)
-
-'''
-Takes x and y as inputs and calculates the size of the array,
-the sum of squares, slope and intercept.
-'''
-def estimate_coef (x, y):
-    n = np.size(x)
-    mu_x, mu_y = np.mean(x), np.mean(y)
-    SS_xy = np.sum(y * x) - n * mu_y * mu_x
-    SS_xx = np.sum(x * x) - n * mu_x * mu_x
-    slope = SS_xy / SS_xx
-    intercept = mu_y - slope * mu_x
-    return (slope, intercept)
 
 # Creates a linear regression object
 lm = LinearRegression()
@@ -521,10 +519,6 @@ try:
             # On each loop iteration record the current long shares held
             trade_data_2017_df.at[position_row, lin_2017_shares_name] = \
             lin_reg_2017_shares
-       
-            # Manual increments for testing
-            #position_column += 1
-            #position_row += 1
 
         # increments the name_increment to represent the window size
         lin_reg_2017_name_increment += 1
@@ -544,6 +538,9 @@ summary_2017_df = trade_data_2017_df[name_list].copy()
 # Sum of profits by window size
 profit_2017 = summary_2017_df.sum()
 print(profit_2017)
+
+# highest 2017 profit
+profit_2017_best = round(profit_2017[0], 2)
 
 # creates a barplot of the window size vs the sum of profits in dollars
 sns.barplot(window_size, summary_2017_df.sum(), palette = 'Blues_d')
@@ -585,7 +582,7 @@ plt.xlabel('Window Size')
 plt.ylabel('Total Number of Trades')
 plt.show()
 
-
+# TODO!!
 # Above it was determined that using a fixed window size of 5 is the most
 # profitable, since there are more overall trades and the average per trade
 # is only 0.35 or less per trade. This window size will be used to analyze and 
@@ -600,6 +597,7 @@ bsx_df_2018['position'] = 0
 bsx_df_2018['prediction'] = 0
 window_start = 0
 window_end = 4
+fixed_window = 5
 
 # stores the position 0, 1, -1 for each window size
 position_2018_df  = pd.DataFrame()
@@ -640,18 +638,18 @@ try:
 
         # writes the position column to a the position dataframe after each
         # window iteration
-        position_2018_df[str(window)] = bsx_df_2018.loc[:, 'position']
+        position_2018_df[str(fixed_window)] = bsx_df_2018.loc[:, 'position']
 
 except Exception as e:
     print(e)
-    sys.exit('Failed to build prediction data for 2018')       
+    sys.exit('Failed to build prediction data for 2018')
 
 # Initialize variables and trade_data_df to their starting values
 # before they are utilized in the loop to build out the trade_data df
-long_shares = 0
-long_worth = 0
-long_price = 0
-name_increment = 5
+lin_reg_2018_shares = 0
+lin_reg_2018_worth = 0
+lin_reg_2018_price = 0
+lin_reg_2018_name_increment = 5
 trade_data_2018_df = pd.DataFrame()
 
 # Manual variable setters for testing
@@ -664,19 +662,25 @@ trade_data_2018_df = pd.DataFrame()
 try:
     for position_column in range(0, len(position_2018_df.iloc[0, :])):
         # used to increment the column name to represend the window size
-        long_price_name  = 'long_price'  + str(name_increment)
-        long_shares_name = 'long_shares' + str(name_increment)
-        long_worth_name  = 'long_worth'  + str(name_increment)
+        lin_2018_price_name  = 'lin_2018_price'  + \
+                                str(lin_reg_2018_name_increment)
+        lin_2018_shares_name = 'lin_2018_shares' + \
+                                str(lin_reg_2018_name_increment)
+        lin_2018_worth_name  = 'lin_2018_window '  + \
+                                str(lin_reg_2018_name_increment)
 
         for position_row in range(0, len(position_2018_df)):
             # Buy section
             # long_shares buy should occur if position dataframe  
             # contains a 1 and there are no long_shares held
             if (position_2018_df.iloc[position_row, position_column] == 1 
-            and long_shares == 0): 
-                long_shares = 100.00 / bsx_df_2018.loc[position_row, 'close']           
-                long_price = bsx_df_2018.loc[position_row, 'close']
-                trade_data_2018_df.at[position_row, long_price_name] = long_price
+            and lin_reg_2018_shares == 0): 
+                lin_reg_2018_shares = 100.00 / bsx_df_2018.loc[position_row,
+                                                               'close']           
+                lin_reg_2018_long_price = bsx_df_2018.loc[position_row,
+                                                          'close']
+                trade_data_2018_df.at[position_row, lin_2018_price_name] = \
+                lin_reg_2018_long_price
                 #trade_data_df.at[position_row, long_worth_name] = ((long_shares 
                 #              * df_2017.loc[position_row, 'close'])
                 #              - long_price * long_shares)
@@ -685,27 +689,25 @@ try:
             # long_shares sell should occur if position dataframe  
             # contains a -1 and there are long_shares held
             if (position_2018_df.iloc[position_row, position_column] == -1
-            and long_shares != 0): 
-                long_worth = ((long_shares 
+            and lin_reg_2018_shares != 0): 
+                long_worth = ((lin_reg_2018_shares 
                               * bsx_df_2018.loc[position_row, 'close'])
-                              - long_price * long_shares)
-                trade_data_2018_df.at[position_row, long_worth_name] = (
+                              - lin_reg_2018_long_price * lin_reg_2018_shares)
+                trade_data_2018_df.at[position_row, lin_2018_worth_name] = (
                                                           round(long_worth, 2))
-                trade_data_2018_df.at[position_row, long_price_name] = (
-                                            bsx_df_2018.loc[position_row, 'close'])
-                long_shares = 0
-                long_price = 0
-                long_worth = 0
+                trade_data_2018_df.at[position_row, lin_2018_worth_name] = (
+                                            bsx_df_2018.loc[position_row, 
+                                                            'close'])
+                lin_reg_2018_shares = 0
+                lin_reg_2018_price = 0
+                lin_reg_2018_worth = 0
                   
             # On each loop iteration record the current long shares held
-            trade_data_2018_df.at[position_row, long_shares_name]  = long_shares
-       
-            # Manual increments for testing
-            #position_column += 1
-            #position_row += 1
+            trade_data_2018_df.at[position_row, lin_2018_shares_name] = \
+            lin_reg_2018_shares
 
         # increments the name_increment to represent the window size
-        name_increment += 1
+        lin_reg_2018_name_increment += 1
             
 except Exception as e:
     print(e)
@@ -716,17 +718,19 @@ except Exception as e:
 # Start analysis/presenation
     
 # create a dataframe to store the daily profits made from selling stocks
-summary_2018_df = trade_data_2018_df['long_worth5'].copy()
+summary_2018_df = trade_data_2018_df['lin_2018_window 5'].copy()
 
 # Creating an estimated coefficient between the measures
 # the slope is a perfect 1 and the intercept is at 0
 # dataframes start at position 5 since the first 0-4 were not predicted
 # do to window size starting at 5
-coefficient = estimate_coef(df_2018.loc[5:,'adj_close'], df_2018.loc[5:,'prediction'])
+coefficient = estimate_coef(bsx_df_2018.loc[5:,'adj_close'],
+                            bsx_df_2018.loc[5:,'prediction'])
 print(coefficient)
 
 # Generate a plot of the actual vs predicted values
-sns.scatterplot(df_2018.loc[5:,'adj_close'], df_2018.loc[5:,'prediction'], color='navy')
+sns.scatterplot(bsx_df_2018.loc[5:,'adj_close'],
+                bsx_df_2018.loc[5:,'prediction'], color='navy')
 sns.lineplot(range(25, 40), range(25, 40), color = 'red')
 plt.title('Actual Close vs. Predicted Close')
 plt.xlabel('Actual Close')
@@ -739,12 +743,12 @@ print(np.mean(coefficient))
 
 # long days
 # 131
-long_days = df_2018[df_2018['position'] > 0].count()['position']
+long_days = bsx_df_2018[bsx_df_2018['position'] > 0].count()['position']
 print(long_days)
 
 # short days
 # 111
-short_days = df_2018[df_2018['position'] < 0].count()['position']
+short_days = bsx_df_2018[bsx_df_2018['position'] < 0].count()['position']
 print(short_days)
 
 # Plot long vs short day totals
@@ -757,8 +761,11 @@ plt.ylabel('Total Days')
 plt.show()
 
 # Sum of profits for 2018
-profit_2018 = summary_2018_df.sum()
+profit_2018 = round(summary_2018_df.sum(), 2)
 print(profit_2018)
+
+# 2017 vs 2018 profits, 0 index to represent highest profit 2017
+print('profits 2017: ', profit_2017_best,'\nprofits 2018: ', profit_2018)
 
 # Plot total profits 2017 vs 2018
 profit_data = pd.DataFrame({'Year': ['2017', '2018'], 
