@@ -19,7 +19,7 @@ from sklearn.metrics import confusion_matrix, recall_score
 # Using the stock ticker BSX - Boston Scientific Corporation.
 # setup input directory and filename
 ticker = 'BSX-labeled'
-input_dir = r'C:\Users\TomBrody\Desktop\Projects\stock-prediction\data'
+input_dir = r'C:\Users\Eric\Documents\GitHub\stock-prediction\data'
 ticker_file = os.path.join(input_dir, ticker + '.csv')
 
 # Set display options for dataframes
@@ -78,7 +78,7 @@ del bsx_2018_reduced.index.name
 features = ['mu', 'sig']
 
 #####
-# Setup train/test and scale data
+# train/test and scale data
 #####
 
 # Initialize scaler
@@ -100,8 +100,18 @@ x_train_scaled = scaler.transform(x_train)
 scaler.fit(x_test)
 x_test_scaled  = scaler.transform(x_test)
 
+# stores adj_close values for the last day of each trading week
+adj_close = bsx_df_2018.groupby('td_week_number')['adj_close'].last()
+
+# stores open price for the first day of each trading week
+open_price = bsx_df_2018.groupby('td_week_number')['open'].first()
+
 #####
-# KNN
+# End setup
+#####
+
+#####
+# Start KNN
 #####
 
 # Create a KNN model based upon the mean and standard
@@ -197,12 +207,6 @@ knn_wallet = 100.00
 knn_shares = 0
 knn_profit = 0
 knn_worth = 0
-
-# stores adj_close values for the last day of each trading week
-adj_close = bsx_df_2018.groupby('td_week_number')['adj_close'].last()
-
-# stores open price for the first day of each trading week
-open_price = bsx_df_2018.groupby('td_week_number')['open'].first()
 
 # for loop that evaluates the dataset deciding when to buy/sell based
 # upon the prediction labels. 0 is a bad week, 1 is a good week
@@ -810,16 +814,17 @@ tree_clf = tree.DecisionTreeClassifier(criterion = 'entropy')
 tree_clf = tree_clf.fit(x_train, y_train)
 
 # Predict using 2018 feature data
-prediction = tree_clf.predict(x_test)
+tree_prediction = tree_clf.predict(x_test)
 
 # calculate error rate
-accuracy_rate = 100-(round(np.mean(prediction != y_test) * 100, 2))
+tree_accuracy_rate = 100-(round(np.mean(tree_prediction != y_test) * 100, 2))
 
 # Print error rate
-print('The decision tree classifier has an accuracy of', accuracy_rate,'%')
+print('The decision tree classifier has an accuracy of', 
+      tree_accuracy_rate,'%')
 
 # Output the confusion matrix
-cm = confusion_matrix(y_test, prediction)
+cm = confusion_matrix(y_test, tree_prediction)
 print('\nConfusion matrix for year 2 predictions:')
 print(cm, '\n')
 
@@ -840,11 +845,11 @@ plt.ylabel('Actual label')
 plt.xlabel('Predicted label')
 
 # store confusion matrix figures
-tn, fp, fn, tp = confusion_matrix(y_test, prediction).ravel()
+tn, fp, fn, tp = confusion_matrix(y_test, tree_prediction).ravel()
 
 # TPR/TNR rates
 print('The TPR is:', str(tp) + '/' + str(tp + fn) + ',',
-      round(recall_score(y_test, prediction) * 100, 2),'%')
+      round(recall_score(y_test, tree_prediction) * 100, 2),'%')
 print('The TNR is:', str(tn) + '/' + str(tn + fp) + ',',
     round(tn / (tn + fp) * 100, 2),'%')
 
@@ -858,17 +863,17 @@ tree_profit = 0
 # for loop that evaluates the dataset deciding when to buy/sell based
 # upon the prediction labels. 0 is a bad week, 1 is a good week
 try:
-    for day in range(0, len(prediction)):
+    for day in range(0, len(tree_prediction)):
         # Sell should occur on the last day of a green week at 
         # the adjusted_close price. Since i is tracking the current
         # trading week we need to minus 1 to get the adjusted close price
         # from the previous trading week
-        if prediction[day] == 0 and shares > 0:
+        if tree_prediction[day] == 0 and tree_shares > 0:
             tree_wallet = round(tree_shares * adj_close[day - 1], 2)
             tree_shares = 0
             
         # Buy should occur on the first day of a green week at the open price
-        if prediction[day] == 1 and shares == 0: 
+        if tree_prediction[day] == 1 and tree_shares == 0: 
             tree_shares = tree_wallet / open_price[day]
             tree_wallet = 0            
             
@@ -877,13 +882,17 @@ except Exception as e:
     exit('Failed to evaluate decision tree labels')
 
 # set worth by multiplying stock price on final day by total shares
-tree_worth = round(shares * adj_close[52], 2)
+tree_worth = round(tree_shares * adj_close[52], 2)
 
 if tree_worth == 0:
-    tree_worth = wallet
+    tree_worth = tree_wallet
     tree_profit = round(tree_wallet - 100.00, 2)
 else:
     tree_profit = round(tree_worth - 100.00, 2)
+
+#####
+# End decision tree
+#####
 
 #####
 # Setup for buy and hold strat
@@ -906,19 +915,18 @@ bh_profit = round(bh_worth - 100.00, 2)
 #####
 
 # KNN profits
-print('\KNN Label Strategy:')
+print('\nKNN Label Strategy:')
 print('Total Cash: $', knn_wallet, '\nTotal shares:', round(knn_shares, 6),
       '\nWorth: $', knn_worth)    
 print('This method would close the year at $', knn_worth, 'a profit of $', 
       knn_profit)
 
 # Decision Tree profits
-print('\Decisions tree Label Strategy:')
-print('Total Cash: $', "%.2f"%tree_wallet, '\nTotal shares:', round(shares, 6),
-      '\nWorth: $', "%.2f"%tree_worth)
+print('\nDecisions tree Label Strategy:')
+print('Total Cash: $', "%.2f"%tree_wallet, '\nTotal shares:',
+      round(tree_shares, 6), '\nWorth: $', "%.2f"%tree_worth)
 print('This method would close the year at $', "%.2f"%tree_worth,
       'a profit of $', "%.2f"%tree_profit)
-
 
 # Buy and hold profits
 print('\n2018 buy and hold:','\nCurrently own', bh_shares, 'shares',
